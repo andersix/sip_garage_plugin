@@ -1,0 +1,253 @@
+$def with(settings)
+
+$var title: $_('SIP Garage Plugin')
+$var page: garage_plugin
+
+<script>
+
+    // Initialize behaviors
+    jQuery(document).ready(function(){
+
+        jQuery("#cSubmit").click(function() {
+            jQuery("#pluginForm").submit();
+        });
+        jQuery("button#cCancel").click(function(){
+            window.location= baseUrl + "/";
+        });
+
+        jQuery("button#docButton").click(function(){
+            window.open(baseUrl + "/static/docs/plugins/garage-docs.html", "_blank");
+        });
+
+        jQuery("button#gButton1").click(function(){
+            window.location= baseUrl + "/garage-b1";
+        });
+
+        jQuery("button#gButton2").click(function(){
+            window.location= baseUrl + "/garage-b2";
+        });
+
+    });
+</script>
+
+<div id="plugin">
+    <div class="title">Garage Plugin</div>
+
+    <div class="title">
+    <button class="execute" id="docButton" type="button" >$_('Help')</button>
+    <button class="execute" id="gButton1" type="submit" >$_('Garage 1')</button>
+    <button class="execute" id="gButton2" type="submit" >$_('Garage 2')</button>
+    </div>
+
+    <p>Using available GPIO pins, relays and sensors, this plugin monitors and can open/close garage doors. It can notify for door events, like open, etc. For notifications, you need an email account as provider.</p>
+
+    <p>&nbsp;</p>
+    <form id="pluginForm" action="${app_path('/garage-save')}" method="get">
+
+        <div class="title">$_('Relay and Sensor GPIO Settings'):</div>
+        <table class="optionList">
+
+            <thead>
+                <th class="stationNumber">$_('PARAMETER')</th>
+                <th class="stationNumber">$_('VALUE')</th>
+            </thead>
+
+            <tr>
+                <td style='text-transform: none;'>$_('Relay 1 Pin #'):</td>
+                <td><input type="text" name="relay1_pin" value=${settings['relay']['1']['pin']}></td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Relay 1 Pin High Polarity Enable'):</td>
+                <td>
+                    <input name='relay1_pol' type='checkbox'${" checked" if settings['relay']['1']['pol'] == 1 else ""}>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Relay 1 Opening Allowed'):</td>
+                <td>
+                    <input name='relay1_opa' type='checkbox'${" checked" if settings['relay']['1']['prm'] == 1 else ""}>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Relay 1 is a door'):</td>
+                <td>
+                    <input name='relay1_iad' type='checkbox'${" checked" if settings['relay']['1']['typ'] == 1 else ""}>
+                </td>
+            </tr>
+
+            <tr>
+                <td style='text-transform: none;'>$_('Relay 2 Pin #'):</td>
+                <td><input type="text" name="relay2_pin" value=${settings['relay']['2']['pin']}></td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Relay 2 Pin High Polarity Enable'):</td>
+                <td>
+                    <input name='relay2_pol' type='checkbox'${" checked" if settings['relay']['2']['pol'] == 1 else ""}>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Relay 2 Opening Allowed'):</td>
+                <td>
+                    <input name='relay2_opa' type='checkbox'${" checked" if settings['relay']['2']['prm'] == 1 else ""}>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Relay 2 is a door'):</td>
+                <td>
+                    <input name='relay2_iad' type='checkbox'${" checked" if settings['relay']['2']['typ'] == 1 else ""}>
+                </td>
+            </tr>
+
+            <tr>
+                <td style='text-transform: none;'>$_('Sensor 1 Pin #'):</td>
+                <td><input type="text" name="sensor1_pin" value="${settings['sensor']['1']['pin']}"></td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Sensor 1 Enable Pullup'):</td>
+                <td>
+                    <input name='sensor1_pud' type='checkbox'${" checked" if settings['sensor']['1']['pud'] == 1 else ""}>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Sensor 2 Pin #'):</td>
+                <td><input type="text" name="sensor2_pin" value="${settings['sensor']['2']['pin']}"></td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>$_('Sensor 2 Enable Pullup'):</td>
+                <td>
+                    <input name='sensor2_pud' type='checkbox'${" checked" if settings['sensor']['2']['pud'] == 1 else ""}>
+                </td>
+            </tr>
+
+        </table>
+
+        <p>&nbsp;</p>
+        <div class="title">$_('Notification Settings'):</div>
+        <table class="optionList">
+            <thead>
+                <th class="stationNumber">$_('PARAMETER')</th>
+                <th class="stationNumber">$_('VALUE')</th>
+            </thead>
+
+            <tr>
+                <td style='text-transform: none;'>Send log.csv after power on:</td>
+                <td>
+                    <input name='ntfy_log' type='checkbox'${" checked" if settings['ntfy_log'] == "on" else ""}>   
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>Notify if rain is detected:</td>
+                <td>
+                    <input name='ntfy_rain' type='checkbox'${" checked" if settings['ntfy_rain'] == "on" else ""}>   
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>Notify if plugin has run:</td>
+                <td>
+                    <input name='ntfy_run' type='checkbox'${" checked" if settings['ntfy_run'] == "on" else ""}> 
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>Notify on any Garage Door sensor event:</td>
+                <td>
+                    <input name='ntfy_gev' type='checkbox'${" checked" if settings['ntfy_gev'] == "on" else ""}> 
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>Notify if Garage Door status is OPEN:</td>
+                <td>
+                    <input name='ntfy_gdo[0]' type='checkbox'${" checked" if settings['ntfy_gdo'][0] == "on" else ""}> 
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>Garage Door OPEN nag timer:</td>
+                <td>
+                    <input name='ntfy_gdo[1]' type='text' value=$settings['ntfy_gdo'][1]>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>Notify if Garage Door status is CLOSED:</td>
+                <td>
+                    <input name='ntfy_gdc[0]' type='checkbox'${" checked" if settings['ntfy_gdc'][0]== "on" else ""}> 
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>Garage Door CLOSED nag timer:</td>
+                <td>
+                    <input name='ntfy_gdc[1]' type='text' value=$settings['ntfy_gdc'][1]>
+                </td>
+            </tr>
+            <tr> <td>&nbsp;</td> </tr>
+            <tr>
+                <td style='text-transform: none;'>Enable email notification:</td>
+                <td>
+                    <input name='mail_en' type='checkbox'${" checked" if settings['mail_en'] == "on" else ""}>   
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>Your email username:</td>
+                <td>
+                    <input name='mail_usr' type='text' value=$settings["mail_usr"]>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>Your email password:</td>
+                <td>
+                    <input name='mail_pwd' type='password' value=$settings["mail_pwd"]>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>Send mail to:</td>
+                <td>
+                    <input name='mail_adr' type='text' value=$settings["mail_adr"]>
+                </td>
+            </tr>
+            <tr> <td>&nbsp;</td> </tr>
+            <tr>
+                <td style='text-transform: none;'>Enable Twilio SMS notification:</td>
+                <td>
+                    <input name='twil_en' type='checkbox'${" checked" if settings['twil_en'] == "on" else ""}>   
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>Twilio Account SID:</td>
+                <td>
+                    <input name='twil_sid' type='text' value=$settings["twil_sid"]>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>Twilio Auth Token:</td>
+                <td>
+                    <input name='twil_atok' type='text' value=$settings["twil_atok"]>
+                </td>
+            </tr>
+            <tr> <td style='text-transform: none;'>Twilio To Number:</td>
+                <td>
+                    <input name='twil_to' type='text' value=$settings["twil_to"]>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>Twilio From Number:</td>
+                <td>
+                    <input name='twil_from' type='text' value=$settings["twil_from"]>
+                </td>
+            </tr>
+        </table>
+
+        <p>&nbsp;</p>
+        <div class="title">$_('Status'):</div>
+        <table class="optionList">
+            <tr>
+                <td>
+                    <textarea style="font-family: monospace;" rows="7" cols="35" readonly>$settings['status']</textarea>
+                </td>
+            </tr>
+        </table>
+
+    </form>
+
+<div id="controls">
+    <button id="cSubmit" class="submit"><b>$_('Submit')</b></button>
+    <button id="cCancel" class="cancel danger">$_('Cancel')</button>
+</div>
+</div>

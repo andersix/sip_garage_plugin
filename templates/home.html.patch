@@ -1,0 +1,58 @@
+diff --git a/templates/home.html b/templates/home.html
+index 857e79e..a51c2e5 100644
+--- a/templates/home.html
++++ b/templates/home.html
+@@ -12,6 +12,10 @@ $code:
+ 		return '%02d' % int(n)
+ 
+ $code:
++    def plugin_garage_status():
++        return "garage status"
++
++$code:
+     def plugin_adjustment():
+         duration_adjustments = [gv.sd[entry] for entry in gv.sd if entry.startswith('wl_')]
+         result = 100.0
+@@ -194,6 +198,10 @@ $code:
+             window.location = baseUrl + "/cv?rsn=1";
+         });
+ 
++        jQuery("button#pGarageStatus").click(function(){
++            window.location = baseUrl + "/";
++        });
++
+         jQuery("button#pPrev").click(function() {
+             displayScheduleDate.setDate(displayScheduleDate.getDate() - 1);
+             displayProgram();
+@@ -364,6 +372,31 @@ $else:
+ <!--          <button id="pStopAll" class="execute delete">$_('Stop All Stations')</button> -->
+     </div>
+ 		 <button id="pStopAll" class="execute delete">$_('Stop All Stations')</button>
++    <br>
++    <br>
++
++<!-- --vv-- Garage Control Plugin --vv--  -->
++<div id="garagediv">
++<table id="garages" class="stationList">
++<tr> <td>
++    $if gv.gc_started:
++        <button id="pGarageStatus" class="execute delete">$_('Garage Status')</button>
++</td> </tr>
++<tr> <td>
++        $if gv.gc_door_state["1"] == "CLOSED":
++            <button id="" class="submit">Door 1 ${gv.gc_door_state["1"]}</button>
++        $elif gv.gc_door_state["1"] == "OPEN":
++            <button id="" class="cancel danger">Door 1 ${gv.gc_door_state["1"]}</button>
++</td> </tr>
++<tr> <td>
++        $if gv.gc_door_state["1"] != "UNKNOWN":
++            Door 1 is: ${gv.gc_door_state["1"]}
++</td> </tr>
++</table>
++</div>
++    <br>
++<!-- --^^-- Garage Control Plugin --^^--  -->
++
+ </div>
+ 
+ <div id="controls">
