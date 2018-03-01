@@ -28,18 +28,22 @@ To apply the patch, log into your SIP RPi and apply it in the SIP/templates dire
 
 $ patch -p1 < home.patch
 
-
-Diagrams
-============
-
-(block diagram here)
-
-(hardware wiring/schematic diagram here)
-
 Usage
 ============
 The plugin creates buttons in the plugins menu to activate the two relays.
 
 Use the Garage Plugin settings page to change pin locations. Note that the defaults are chosen as unused pins in an OpenSprinkler setup.
+
+
+
+Diagrams
+============
+
+### Block Diagram
+Before converting this code-base into a SIP plugin, it was stand-alone. The stand-alone design started with the following diagram, which explains the control flow. This is essentially the same in the SIP plugin, however, the plugin GPIO pins, and timers, etc., are changeable via the plugin's settings.
+![alt text](https://cdn.rawgit.com/andersix/sip_garage_plugin/master/doc/GaragePi.svg)
+
+
+(hardware wiring/schematic diagram here)
 
 
