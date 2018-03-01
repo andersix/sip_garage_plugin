@@ -59,9 +59,13 @@ urls.extend([
 #
 # Plugin menu entries ['Menu Name', 'URL'], (Optional)
 #
-gv.plugin_menu.append(['Garage Doors Settings', '/garage-s'])
-gv.plugin_menu.append(['Garage Button 1', '/garage-b1'])
-gv.plugin_menu.append(['Garage Button 2', '/garage-b2'])
+gvmenu_settings = ['Garage Doors Settings', '/garage-s']
+gvmenu_button1  = ['Garage Button 1', '/garage-b1']
+gvmenu_button2  = ['Garage Button 2', '/garage-b2']
+
+gv.plugin_menu.append(gvmenu_settings)
+gv.plugin_menu.append(gvmenu_button1)
+gv.plugin_menu.append(gvmenu_button2)
 
 
 ###############################################################################
@@ -286,6 +290,11 @@ class GarageControl(Thread):
                 #self._sleep(3600)
                 time.sleep(3600)
 
+            #
+            # TODO FIXME : not sure why this happens, but occationally, the plugin is re-loaded/re-started
+            #              by the main SIP plugin code (I think) and so I added this code to keep track of
+            #              the thread start time, so the old thread is killed. Hack? Bug? Help...
+            #
             if not t_start == gv.gc_start:  # Program restarted, so clean-up GPIO and stop thread
                 for n in s:
                     pin = s[n]['pin']
@@ -293,6 +302,9 @@ class GarageControl(Thread):
                         self.gpio.remove_event_detect(pin)
                 print(time.strftime("%c") + ", Exiting Thread\n") 
                 self.add_status(time.strftime("%c") + ", Exiting Thread\n") 
+                gv.plugin_menu.remove(gvmenu_settings)
+                gv.plugin_menu.remove(gvmenu_button1)
+                gv.plugin_menu.remove(gvmenu_button2)
                 return
             # pause thread loop for 'n' seconds
             #self._sleep(self.tp)
