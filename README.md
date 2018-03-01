@@ -1,8 +1,8 @@
 # Garage Plugin
-A garage monitor and control plugin for the Raspberry Pi based SIP irrigation control software
+A garage monitor and control plugin for the Raspberry Pi based [SIP](https://github.com/Dan-in-CA/SIP) irrigation control software
 
 ## Synopsis
-A plugin for the Raspberry Pi based irrigation controll software  [SIP](https://github.com/Dan-in-CA/SIP).
+A plugin for the Raspberry Pi based irrigation controll software [SIP](https://github.com/Dan-in-CA/SIP).
 This plugin, along with associated relay and sensor hardware, can monitor and control up to two garage doors, and send notifications on events like open, close, etc.
 
 ## Motivation
