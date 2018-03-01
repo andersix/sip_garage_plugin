@@ -44,9 +44,11 @@ Diagrams
 
 ### Block Diagram
 Before converting this code-base into a SIP plugin, it was stand-alone. The stand-alone design started with the following diagram, which explains the control flow. This is essentially the same in the SIP plugin, however, the plugin GPIO pins, and timers, etc., are changeable via the plugin's settings.
-![alt text](https://cdn.rawgit.com/andersix/sip_garage_plugin/master/doc/GaragePi.svg)
+![GaragePi flowchart](https://cdn.rawgit.com/andersix/sip_garage_plugin/master/doc/GaragePi.svg)
 
 
-(hardware wiring/schematic diagram here)
+### GPIO pins
+The following diagram shows the GPIO pins used by OpenSprinkler, and the default GPIO pins used by the Garage plugin. The pins highlighted in orange are used by OpenSprinkler, so obviously don't use them. Any other GPIOs are available. I picked the ones on the outside to make soldering pin connectors eaiser, and also because Ground connections are close by.
+![Garage GPIOs](https://raw.githubusercontent.com/andersix/sip_garage_plugin/master/doc/garage_gpios.png)
 
 
