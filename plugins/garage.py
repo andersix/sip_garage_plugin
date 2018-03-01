@@ -35,6 +35,7 @@ from gpio_pins import GPIO
 from random import randint
 from threading import Thread
 
+# TODO FIXME : create a new email method to use Google apps API instead of smtplib
 from email import Encoders
 import smtplib
 from email.MIMEMultipart import MIMEMultipart
@@ -64,27 +65,18 @@ except:
 DATA_FILE = "./data/garage.json"
 
 #
-# URLs to access classes in this plugin.
-#
-urls.extend([
-    '/garage-b1',   'plugins.garage.garage_button_1',
-    '/garage-b2',   'plugins.garage.garage_button_2',
-    '/garage-s',    'plugins.garage.settings',
-    '/garage-save', 'plugins.garage.save_settings'
-])
-
-
-#
 # Plugin menu entries ['Menu Name', 'URL'], (Optional)
 #
 gvmenu_settings = ['Garage Doors Settings', '/garage-s']
 gvmenu_button1  = ['Garage Button 1', '/garage-b1']
 gvmenu_button2  = ['Garage Button 2', '/garage-b2']
 
-gv.plugin_menu.append(gvmenu_settings)
-gv.plugin_menu.append(gvmenu_button1)
-gv.plugin_menu.append(gvmenu_button2)
-
+plugin_urls = [
+    '/garage-b1',   'plugins.garage.garage_button_1',
+    '/garage-b2',   'plugins.garage.garage_button_2',
+    '/garage-s',    'plugins.garage.settings',
+    '/garage-save', 'plugins.garage.save_settings'
+]
 
 ###############################################################################
 # Garage controller thread
@@ -92,6 +84,13 @@ gv.plugin_menu.append(gvmenu_button2)
 class GarageControl(Thread):
     def __init__(self, gpio):
         Thread.__init__(self)
+        # add plugin menu items:
+        gv.plugin_menu.append(gvmenu_settings)
+        gv.plugin_menu.append(gvmenu_button1)
+        gv.plugin_menu.append(gvmenu_button2)
+        # add urls:
+        urls.extend(plugin_urls)
+        # remaining plugin init:
         self.daemon = True
         self.name = 'garage'
         self.gpio = gpio
@@ -104,6 +103,8 @@ class GarageControl(Thread):
         self.tp = 10  # seconds to pause thread loop
         self.start()
 
+    # TODO FIXME : this status "string" should be replaced with a logging mechanism
+    #              so we get it outta memory!
     def add_status(self, msg, debug=True):
         _status = 'STATUS: ' + time.strftime("%d.%m.%Y at %H:%M:%S", time.localtime(time.time())) + ': ' + msg
         if self.status:
@@ -271,13 +272,13 @@ class GarageControl(Thread):
                     if(pin):
                         if self._door_state[n] == "CLOSING":
                             closing_time = time.time()
-                            self.add_status("Detected door %s is closing." % n)
+                            self.add_status("Detected door %s is closing at %0d." % (n, closing_time) )
 #
 # TODO FIXME : notify if "door closing" takes too long...
 #
                             if closing_time - self._event_time > 60:
                                 self._event_time = closing_time
-                                self.try_notify(self.subject, "Garage Door %s is taking a long time to close" % n)
+                                self.try_notify(self.subject, "Garage Door %s is taking a long time (%0d) to close" % (n, closing_time - self._event_time) )
 #
 # TODO FIXME : * notify once of door open if gcd is 'on', and nag time is zero
 #              * add a door is open "nag count", that is, stop nagging after "count" times.
@@ -320,9 +321,13 @@ class GarageControl(Thread):
                         self.gpio.remove_event_detect(pin)
                 print(time.strftime("%c") + ", Exiting Thread\n") 
                 self.add_status(time.strftime("%c") + ", Exiting Thread\n") 
+                # remove menu items/urls if we restart, so we don't keep expanding the lists!
                 gv.plugin_menu.remove(gvmenu_settings)
                 gv.plugin_menu.remove(gvmenu_button1)
                 gv.plugin_menu.remove(gvmenu_button2)
+                for v in plugin_urls:
+                    if v in urls:
+                        urls.remove(v)
                 return
             # pause thread loop for 'n' seconds
             #self._sleep(self.tp)
@@ -572,8 +577,6 @@ def get_data():
         #print settings
     return settings
 
-
-# TODO FIXME : create a new email method to use Google apps API instead of smtplib
 
 def send_email(subject, text, attach=None):
     """
