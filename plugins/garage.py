@@ -35,7 +35,11 @@ from gpio_pins import GPIO
 from random import randint
 from threading import Thread
 
+#
 # TODO FIXME : create a new email method to use Google apps API instead of smtplib
+#              See how-to here: https://developers.google.com/gmail/api/quickstart/python
+#                               https://stackoverflow.com/questions/25944883/how-to-send-an-email-through-gmail-without-enabling-insecure-access
+#
 from email import Encoders
 import smtplib
 from email.MIMEMultipart import MIMEMultipart
@@ -97,7 +101,7 @@ class GarageControl(Thread):
         self.status = ''
         self._sleep_time = 0
         self._door_state = {"1":"UNKNOWN", "2":"UNKNOWN"}
-        self._event_time = 0
+        self._event_time = 0  # events are buttons and door sensors
         self.settings = {}
         self.subject = "[SIP] Garage"  # TODO add subject to settings file
         self.tp = 10  # seconds to pause thread loop
@@ -112,7 +116,7 @@ class GarageControl(Thread):
         else:
             self.status = _status
         if debug:
-            print _status
+            print(_status)
 
     def try_notify(self, subject, text, when=None, attachment=None):
         """
@@ -247,6 +251,7 @@ class GarageControl(Thread):
                     self.toggle_relay(_rp,_rx,_dy)
                     self._door_state[button] = 'OPENING'
                     self.add_status("Opening Door %s" % button)
+            self._event_time = time.time()
         except:
             self.add_status("Error toggling relay %s" % button)
 
@@ -272,16 +277,20 @@ class GarageControl(Thread):
                     if(pin):
                         if self._door_state[n] == "CLOSING":
                             closing_time = time.time()
-                            self.add_status("Detected door %s is closing at %0d." % (n, closing_time) )
-#
-# TODO FIXME : notify if "door closing" takes too long...
-#
-                            if closing_time - self._event_time > 60:
-                                self._event_time = closing_time
-                                self.try_notify(self.subject, "Garage Door %s is taking a long time (%0d) to close" % (n, closing_time - self._event_time) )
+                            self.add_status("Detected door {} is closing at {}.".format(n, closing_time) )
+                            # notify if "door closing" takes too long...
+                            while(self._door_state[n] == "CLOSING"):
+                                closing_time = time.time()
+                                self.add_status("Detected door {} is still closing at {}.".format(n, closing_time) )
+                                if closing_time - self._event_time > 60:
+                                    self.try_notify(self.subject, "Garage Door {} is taking a long time (ct:{}, et:{}) to close".format(n, closing_time, self._event_time) )
+                                    self._event_time = closing_time
+                                time.sleep(1)
 #
 # TODO FIXME : * notify once of door open if gcd is 'on', and nag time is zero
 #              * add a door is open "nag count", that is, stop nagging after "count" times.
+#
+# TODO : add "i'm home button/url, so you can indicate garage door open for long time is OK.
 #
                         if self._door_state[n] == "OPEN":
                             if self.settings['ntfy_gdo'][0] == 'on' and self.settings['ntfy_gdo'][1]:
@@ -581,30 +590,42 @@ def get_data():
 def send_email(subject, text, attach=None):
     """
     Send email with with optional attachments
+    If we have attachments, we send a MIME message,
+    otherwise we send plain text.
+    Note: If using gmail, using SMTPLIB is deprecated.
+          You can, however, allow this "less secure"
+          access to your gmail account by enabling it:
+          https://support.google.com/accounts/answer/6010255?hl=en          
     """
     settings = controller.settings
     if settings['mail_usr'] != '' and settings['mail_pwd'] != '' and settings['mail_adr'] != '':
         mail_user = settings['mail_usr']  # User name
-        mail_name = gv.sd['name']       # OSPi name
+        mail_from = gv.sd['name']       # OSPi name
         mail_pwd = settings['mail_pwd']   # User password
+        mail_to = settings['mail_adr']
         #--------------
-        msg = MIMEMultipart()
-        msg['From'] = mail_name
-        msg['To'] = settings['mail_adr']
-        msg['Subject'] = subject
-        msg.attach(MIMEText(text))
         if attach is not None:
+            msg = MIMEMultipart()
+            msg['From'] = mail_from
+            msg['To'] = mail_to
+            msg['Subject'] = subject
+            msg.attach(MIMEText(text))
             part = MIMEBase('application', 'octet-stream')
             part.set_payload(open(attach, 'rb').read())
             Encoders.encode_base64(part)
             part.add_header('Content-Disposition', 'attachment; filename="%s"' % os.path.basename(attach))
             msg.attach(part)
+            message = msg.as_string()
+        else:
+            message = """From: %s\nTo: %s\nSubject: %s\n\n%s
+            """ % (mail_from, ", ".join(mail_to), subject, text)
+        #----------
         mailServer = smtplib.SMTP("smtp.gmail.com", 587)  # TODO FIXME : put server address and port into settings
         mailServer.ehlo()
         mailServer.starttls()
         mailServer.ehlo()
         mailServer.login(mail_user, mail_pwd)
-        mailServer.sendmail(mail_name, settings['mail_adr'], msg.as_string())   # name + e-mail address in the From: field
+        mailServer.sendmail(mail_from, settings['mail_adr'], message)  # name + e-mail address in the From: field
         mailServer.close()
     else:
         raise Exception('E-mail settings not properly configured!')
