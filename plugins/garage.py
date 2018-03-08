@@ -188,6 +188,8 @@ class GarageControl(Thread):
         try:
             if self.gpio.input(pin) == 0:
                 return "CLOSED"
+            # If the pin state is '1', we say it's OPEN, but it could be OPENING or CLOSING
+            # To improve, I could add a second sensor to indicate when the door is fully open.
             if self.gpio.input(pin) == 1:
                 return "OPEN"
         except:
@@ -241,16 +243,18 @@ class GarageControl(Thread):
                 self._door_state[button] = 'NOT_A_DOOR'
                 self.add_status("Toggled Relay %s" % button)
             else:  # otherwise, relay is a door, so honor allow-open permission
-                if not _po and self._door_state[button] == 'CLOSED':
+                if not _po and (self._door_state[button] == 'CLOSED' or self._door_state[button] == 'CLOSING'):
                     self.add_status("Opening Door %s not permitted." % button)
-                elif self._door_state[button] == 'OPEN':
+                elif self._door_state[button] == 'OPEN' or self._door_state[button] == 'OPENING':
                     self.toggle_relay(_rp,_rx,_dy)
                     self._door_state[button] = 'CLOSING'
                     self.add_status("Closing Door %s" % button)
-                else:
+                elif self._door_state[button] == 'CLOSED' or self._door_state[button] == 'CLOSING':
                     self.toggle_relay(_rp,_rx,_dy)
                     self._door_state[button] = 'OPENING'
                     self.add_status("Opening Door %s" % button)
+                else:
+                    self.add_status("Door %s state is unknown..." % button)
             self._event_time = time.time()
         except:
             self.add_status("Error toggling relay %s" % button)
@@ -283,8 +287,10 @@ class GarageControl(Thread):
                                 closing_time = time.time()
                                 self.add_status("Detected door {} is still closing at {}.".format(n, closing_time) )
                                 if closing_time - self._event_time > 60:
-                                    self.try_notify(self.subject, "Garage Door {} is taking a long time (ct:{}, et:{}) to close".format(n, closing_time, self._event_time) )
-                                    self._event_time = closing_time
+                                    #self.try_notify(self.subject, "Garage Door {} is taking a long time (ct:{}, et:{}) to close".format(n, closing_time, self._event_time) )
+                                    self.try_notify(self.subject, "Garage Door {} is taking a long time to close. Assuming it's still OPEN.".format(n) )
+                                    self._door_state[n] = "OPEN"  # if taking too long, assume door is OPEN
+                                    self._event_time = time.time()
                                 time.sleep(1)
 #
 # TODO FIXME : * notify once of door open if gcd is 'on', and nag time is zero
