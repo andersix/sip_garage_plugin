@@ -103,8 +103,9 @@ class GarageControl(Thread):
         self._door_state = {"1":"UNKNOWN", "2":"UNKNOWN"}
         self._event_time = 0  # events are buttons and door sensors
         self.settings = {}
-        self.subject = "[SIP] Garage"  # TODO add subject to settings file
+        self.subject = "Garage"  # TODO add subject to settings file
         self.tp = 10  # seconds to pause thread loop
+        self.nag_limit = 6  # will stop after this many nag notifications. TODO: add this to settings
         self.start()
 
     # TODO FIXME : this status "string" should be replaced with a logging mechanism
@@ -286,34 +287,44 @@ class GarageControl(Thread):
                             while(self._door_state[n] == "CLOSING"):
                                 closing_time = time.time()
                                 self.add_status("Detected door {} is still closing at {}.".format(n, closing_time) )
-                                if closing_time - self._event_time > 60:
-                                    #self.try_notify(self.subject, "Garage Door {} is taking a long time (ct:{}, et:{}) to close".format(n, closing_time, self._event_time) )
+                                if closing_time - self._event_time > 60:  # if taking too long, assume door is OPEN
                                     self.try_notify(self.subject, "Garage Door {} is taking a long time to close. Assuming it's still OPEN.".format(n) )
-                                    self._door_state[n] = "OPEN"  # if taking too long, assume door is OPEN
                                     self._event_time = time.time()
+                                    self.nag_limit = 6  # reset nag timer limit
+                                    self._door_state[n] = "OPEN"
                                 time.sleep(1)
 #
 # TODO FIXME : * notify once of door open if gcd is 'on', and nag time is zero
 #              * add a door is open "nag count", that is, stop nagging after "count" times.
 #
-# TODO : add "i'm home button/url, so you can indicate garage door open for long time is OK.
+# TODO : maybe add "I'm home" button/url, so you can indicate garage door open for long time is OK.
 #
                         if self._door_state[n] == "OPEN":
                             if self.settings['ntfy_gdo'][0] == 'on' and self.settings['ntfy_gdo'][1]:
                                 open_time = time.time()
-                                if open_time - self._event_time > self.settings['ntfy_gdo'][1]:
+                                if (open_time - self._event_time > self.settings['ntfy_gdo'][1]) and self.nag_limit > 0:
                                     self._event_time = open_time
-                                    self.try_notify(self.subject, "Garage Door %s is still Open" % n)
+                                    if self.nag_limit > 1:
+                                        self.try_notify(self.subject, "Garage Door {} is still Open ({})".format(n,self.nag_limit))
+                                    else:
+                                        self.try_notify(self.subject, "OK. I'll stop nagging, but Garage Door {} is still Open".format(n,self.nag_limit))
+                                    if self.nag_limit > 0:
+                                        self.nag_limit -= 1
+                            #elif self.settings['ntfy_gdo'][0] == 'on' and self.settings['ntfy_gdo'][1] == 0:
+                            #        self.try_notify(self.subject, "Garage Door %s is Open" % n)
 #
 # TODO FIXME : * notify once of door closed if gcd is 'on', and nag time is zero
 #              * add a door is closed "nag count", that is, stop nagging after "count" times.
 #
                         if self._door_state[n] == "CLOSED":
+                            self.nag_limit = 6  # reset nag timer limit
                             if self.settings['ntfy_gdc'][0] == 'on' and self.settings['ntfy_gdc'][1]:
                                 close_time = time.time()
                                 if close_time - self._event_time > self.settings['ntfy_gdc'][1]:
                                     self._event_time = close_time
                                     self.try_notify(self.subject, "Garage Door %s is still Closed" % n)
+                            #elif self.settings['ntfy_gdc'][0] == 'on' and self.settings['ntfy_gdc'][1] == 0:
+                            #        self.try_notify(self.subject, "Garage Door %s Closed" % n)
 #
 # TODO FIXME : * maybe add an option to close door after being open for a specified time
 #
