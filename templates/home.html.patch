@@ -1,5 +1,5 @@
 diff --git a/templates/home.html b/templates/home.html
-index 857e79e..a51c2e5 100644
+index 857e79e..9cecfda 100644
 --- a/templates/home.html
 +++ b/templates/home.html
 @@ -12,6 +12,10 @@ $code:
@@ -24,7 +24,7 @@ index 857e79e..a51c2e5 100644
          jQuery("button#pPrev").click(function() {
              displayScheduleDate.setDate(displayScheduleDate.getDate() - 1);
              displayProgram();
-@@ -364,6 +372,31 @@ $else:
+@@ -364,6 +372,34 @@ $else:
  <!--          <button id="pStopAll" class="execute delete">$_('Stop All Stations')</button> -->
      </div>
  		 <button id="pStopAll" class="execute delete">$_('Stop All Stations')</button>
@@ -43,6 +43,9 @@ index 857e79e..a51c2e5 100644
 +            <button id="" class="submit">Door 1 ${gv.gc_door_state["1"]}</button>
 +        $elif gv.gc_door_state["1"] == "OPEN":
 +            <button id="" class="cancel danger">Door 1 ${gv.gc_door_state["1"]}</button>
++</td> </tr>
++<tr> <td>
++<button id="" class="execute" type="button" onclick="window.location.href='/garage-b1'">Garage Button 1</button>
 +</td> </tr>
 +<tr> <td>
 +        $if gv.gc_door_state["1"] != "UNKNOWN":
