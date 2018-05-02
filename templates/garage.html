@@ -53,6 +53,12 @@ $var page: garage_plugin
             </thead>
 
             <tr>
+                <td style='text-transform: none;'>$_('Relay 1 Enable'):</td>
+                <td>
+                    <input name='relay1_ena' type='checkbox'${" checked" if settings['relay']['1']['ena'] == 1 else ""}>
+                </td>
+            </tr>
+            <tr>
                 <td style='text-transform: none;'>$_('Relay 1 Pin #'):</td>
                 <td><input type="text" name="relay1_pin" value=${settings['relay']['1']['pin']}></td>
             </tr>
@@ -75,6 +81,12 @@ $var page: garage_plugin
                 </td>
             </tr>
 
+            <tr>
+                <td style='text-transform: none;'>$_('Relay 2 Enable'):</td>
+                <td>
+                    <input name='relay2_ena' type='checkbox'${" checked" if settings['relay']['2']['ena'] == 1 else ""}>
+                </td>
+            </tr>
             <tr>
                 <td style='text-transform: none;'>$_('Relay 2 Pin #'):</td>
                 <td><input type="text" name="relay2_pin" value=${settings['relay']['2']['pin']}></td>
@@ -99,6 +111,12 @@ $var page: garage_plugin
             </tr>
 
             <tr>
+                <td style='text-transform: none;'>$_('Sensor 1 Enable'):</td>
+                <td>
+                    <input name='sensor1_ena' type='checkbox'${" checked" if settings['sensor']['1']['ena'] == 1 else ""}>
+                </td>
+            </tr>
+            <tr>
                 <td style='text-transform: none;'>$_('Sensor 1 Pin #'):</td>
                 <td><input type="text" name="sensor1_pin" value="${settings['sensor']['1']['pin']}"></td>
             </tr>
@@ -106,6 +124,13 @@ $var page: garage_plugin
                 <td style='text-transform: none;'>$_('Sensor 1 Enable Pullup'):</td>
                 <td>
                     <input name='sensor1_pud' type='checkbox'${" checked" if settings['sensor']['1']['pud'] == 1 else ""}>
+                </td>
+            </tr>
+
+            <tr>
+                <td style='text-transform: none;'>$_('Sensor 2 Enable'):</td>
+                <td>
+                    <input name='sensor2_ena' type='checkbox'${" checked" if settings['sensor']['2']['ena'] == 1 else ""}>
                 </td>
             </tr>
             <tr>

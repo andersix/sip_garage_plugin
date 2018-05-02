@@ -402,6 +402,11 @@ class save_settings(ProtectedPage):
         # print qdict  # for testing
         # print
 
+        if 'relay1_ena' not in qdict:
+            controller.settings['relay']['1']['ena'] = 0
+        else:
+            controller.settings['relay']['1']['ena'] = 1
+
         if 'relay1_pin' in qdict and qdict['relay1_pin'] != '':
             controller.settings['relay']['1']['pin'] = int(qdict['relay1_pin'])
 
@@ -419,6 +424,11 @@ class save_settings(ProtectedPage):
             controller.settings['relay']['1']['typ'] = 0
         else:
             controller.settings['relay']['1']['typ'] = 1
+
+        if 'relay2_ena' not in qdict:
+            controller.settings['relay']['2']['ena'] = 0
+        else:
+            controller.settings['relay']['2']['ena'] = 1
 
         if 'relay2_pin' in qdict and qdict['relay2_pin'] != '':
             controller.settings['relay']['2']['pin'] = int(qdict['relay2_pin'])
@@ -438,6 +448,11 @@ class save_settings(ProtectedPage):
         else:
             controller.settings['relay']['2']['typ'] = 1
 
+        if 'sensor1_ena' not in qdict:
+            controller.settings['sensor']['1']['ena'] = 0
+        else:
+            controller.settings['sensor']['1']['ena'] = 1
+
         if 'sensor1_pin' in qdict and qdict['sensor1_pin'] != '':
             controller.settings['sensor']['1']['pin'] = int(qdict['sensor1_pin'])
 
@@ -445,6 +460,11 @@ class save_settings(ProtectedPage):
             controller.settings['sensor']['1']['pud'] = 0
         else:
             controller.settings['sensor']['1']['pud'] = 1
+
+        if 'sensor2_ena' not in qdict:
+            controller.settings['sensor']['2']['ena'] = 0
+        else:
+            controller.settings['sensor']['2']['ena'] = 1
 
         if 'sensor2_pin' in qdict and qdict['sensor2_pin'] != '':
             controller.settings['sensor']['2']['pin'] = int(qdict['sensor2_pin'])
@@ -554,10 +574,10 @@ def get_data():
     """
     # default relay/sensor settings using unused ospi gpio pins
     defaults = {
-        'relay'      : { '1':{'pin':16, 'pol':1, 'prm':1, 'typ':1},
-                         '2':{'pin':18, 'pol':1, 'prm':1, 'typ':0} },
-        'sensor'     : { '1':{'pin':22, 'pud':1},
-                         '2':{'pin':0 , 'pud':1} },
+        'relay'      : { '1':{'ena':1, 'pin':16, 'pol':1, 'prm':1, 'typ':1},
+                         '2':{'ena':1, 'pin':18, 'pol':1, 'prm':1, 'typ':0} },
+        'sensor'     : { '1':{'ena':1, 'pin':22, 'pud':1},
+                         '2':{'ena':1, 'pin':0 , 'pud':1} },
         'mail_en'    : 'off',
         'mail_usr'   : '',
         'mail_pwd'   : '',
