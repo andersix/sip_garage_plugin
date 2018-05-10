@@ -79,7 +79,8 @@ plugin_urls = [
     '/garage-b1',   'plugins.garage.garage_button_1',
     '/garage-b2',   'plugins.garage.garage_button_2',
     '/garage-s',    'plugins.garage.settings',
-    '/garage-save', 'plugins.garage.save_settings'
+    '/garage-save', 'plugins.garage.save_settings',
+    '/garage-stn',  'plugins.garage.garage_stop_nagging'
 ]
 
 ###############################################################################
@@ -105,8 +106,24 @@ class GarageControl(Thread):
         self.settings = {}
         self.subject = "Garage"  # TODO add subject to settings file
         self.tp = 10  # seconds to pause thread loop
-        self.nag_limit = 6  # will stop after this many nag notifications. TODO: add this to settings
+        self.set_nag_limit()  # will stop after this many nag notifications. TODO: add this to settings
         self.start()
+
+    def clear_nag_limit(self):
+        """
+        very complex method to clear nag limit for web interface button
+        ;-)
+        """
+        self.nag_limit = 0
+        gv.gc_nag = False
+
+    def set_nag_limit(self, limit=6):
+        """
+        very complex method to clear nag limit for web interface button
+        ;-)
+        """
+        self.nag_limit = limit
+        gv.gc_nag = True
 
     # TODO FIXME : this status "string" should be replaced with a logging mechanism
     #              so we get it outta memory!
@@ -290,7 +307,7 @@ class GarageControl(Thread):
                                 if closing_time - self._event_time > 60:  # if taking too long, assume door is OPEN
                                     self.try_notify(self.subject, "Garage Door {} is taking a long time to close. Assuming it's still OPEN.".format(n) )
                                     self._event_time = time.time()
-                                    self.nag_limit = 6  # reset nag timer limit
+                                    self.set_nag_limit()  # reset nag timer limit
                                     self._door_state[n] = "OPEN"
                                 time.sleep(1)
 #
@@ -317,7 +334,7 @@ class GarageControl(Thread):
 #              * add a door is closed "nag count", that is, stop nagging after "count" times.
 #
                         if self._door_state[n] == "CLOSED":
-                            self.nag_limit = 6  # reset nag timer limit
+                            self.set_nag_limit()  # reset nag timer limit
                             if self.settings['ntfy_gdc'][0] == 'on' and self.settings['ntfy_gdc'][1]:
                                 close_time = time.time()
                                 if close_time - self._event_time > self.settings['ntfy_gdc'][1]:
@@ -558,6 +575,12 @@ class garage_button_2(ProtectedPage):
     def GET(self):
         controller.press_button('2')
         raise web.seeother('/')  # return to home page
+
+class garage_stop_nagging(ProtectedPage):
+    def GET(self):
+        controller.clear_nag_limit()
+        raise web.seeother('/')  # return to home page
+
 
 
 ################################################################################
