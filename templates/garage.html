@@ -191,6 +191,12 @@ $var page: garage_plugin
                 </td>
             </tr>
             <tr>
+                <td style='text-transform: none;'>Garage Door OPEN nag limit:</td>
+                <td>
+                    <input name='ntfy_gdo[2]' type='text' value=$settings['ntfy_gdo'][2]>
+                </td>
+            </tr>
+            <tr>
                 <td style='text-transform: none;'>Notify if Garage Door status is CLOSED:</td>
                 <td>
                     <input name='ntfy_gdc[0]' type='checkbox'${" checked" if settings['ntfy_gdc'][0]== "on" else ""}> 
@@ -200,6 +206,12 @@ $var page: garage_plugin
                 <td style='text-transform: none;'>Garage Door CLOSED nag timer:</td>
                 <td>
                     <input name='ntfy_gdc[1]' type='text' value=$settings['ntfy_gdc'][1]>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>Garage Door CLOSED nag limit:</td>
+                <td>
+                    <input name='ntfy_gdc[2]' type='text' value=$settings['ntfy_gdc'][2]>
                 </td>
             </tr>
             <tr> <td>&nbsp;</td> </tr>

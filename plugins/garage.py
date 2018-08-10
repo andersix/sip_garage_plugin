@@ -106,7 +106,6 @@ class GarageControl(Thread):
         self.settings = {}
         self.subject = "Garage"  # TODO add subject to settings file
         self.tp = 10  # seconds to pause thread loop
-        self.set_nag_limit()  # will stop after this many nag notifications. TODO: add this to settings
         self.start()
 
     def clear_nag_limit(self):
@@ -125,11 +124,11 @@ class GarageControl(Thread):
         self.nag_limit = limit
         gv.gc_nag = True
 
-    # TODO FIXME : this status "string" should be replaced with a logging mechanism
-    #              so we get it outta memory!
-    def add_status(self, msg, debug=True):
+    # TODO FIXME : It would be nice to replace this status string with a logging mechanism,
+    #              so we get it outta memory if in append, aka debug, mode.
+    def add_status(self, msg, debug=False):
         _status = 'STATUS: ' + time.strftime("%d.%m.%Y at %H:%M:%S", time.localtime(time.time())) + ': ' + msg
-        if self.status:
+        if self.status and debug:
             self.status += '\n' + _status
         else:
             self.status = _status
@@ -193,7 +192,7 @@ class GarageControl(Thread):
                     gpud = self.gpio.PUD_UP if pud else self.gpio.PUD_DOWN 
                     self.add_status("Enabling input sensor %s on gpio pin: %0d; PUD(%0d)" % (n, pin, pud))
                     self.gpio.setup(pin, self.gpio.IN, pull_up_down=gpud)
-                    self._door_state[n] = self.get_door_state(pin)
+                    self._door_state[n] = self.get_door_state(pin)  # get initial state of door sensor
                     self.add_status("Initial door %s sensor state is %s" % (n, self._door_state[n]))
                     self.add_status("Adding door %s sensor event detection" % n)
                     self.gpio.add_event_detect(pin, self.gpio.BOTH, callback=self.door_event, bouncetime=1000)
@@ -205,10 +204,13 @@ class GarageControl(Thread):
     def get_door_state(self, pin):
         try:
             if self.gpio.input(pin) == 0:
+                self.set_nag_limit(self.settings['ntfy_gdc'][2])  # reset nag timer limit
                 return "CLOSED"
-            # If the pin state is '1', we say it's OPEN, but it could be OPENING or CLOSING
-            # To improve, I could add a second sensor to indicate when the door is fully open.
+            # TODO : System Improvement:
+            #        If the pin state is '1', we say it's OPEN, but it could be OPENING or CLOSING
+            #        To improve, I could add a second sensor to indicate when the door is fully open.
             if self.gpio.input(pin) == 1:
+                self.set_nag_limit(self.settings['ntfy_gdo'][2])  # reset nag timer limit
                 return "OPEN"
         except:
             return "ERROR"
@@ -249,6 +251,9 @@ class GarageControl(Thread):
         """
         'Presses' the button using the configured relay. Relay could be a door,
         or other button like the garage light button.
+        Note: pressing button does not check the physical value of the sensor,
+              because the sensor is checked by the GPIO event thread. This method
+              checks the door state value, which is set by the door event.
         """
         try:
             _rp = self.settings['relay'][button]['pin']
@@ -269,7 +274,9 @@ class GarageControl(Thread):
                     self.add_status("Closing Door %s" % button)
                 elif self._door_state[button] == 'CLOSED' or self._door_state[button] == 'CLOSING':
                     self.toggle_relay(_rp,_rx,_dy)
-                    self._door_state[button] = 'OPENING'
+                    # TODO: If we have a sensor to check for open door, set state to OPENING, else set to OPEN.
+                    #self._door_state[button] = 'OPENING'
+                    self._door_state[button] = 'OPEN'
                     self.add_status("Opening Door %s" % button)
                 else:
                     self.add_status("Door %s state is unknown..." % button)
@@ -297,25 +304,20 @@ class GarageControl(Thread):
                 for n in s:
                     pin = s[n]['pin']  # sensor pin
                     if(pin):
-                        if self._door_state[n] == "CLOSING":
-                            closing_time = time.time()
-                            self.add_status("Detected door {} is closing at {}.".format(n, closing_time) )
-                            # notify if "door closing" takes too long...
-                            while(self._door_state[n] == "CLOSING"):
-                                closing_time = time.time()
-                                self.add_status("Detected door {} is still closing at {}.".format(n, closing_time) )
-                                if closing_time - self._event_time > 60:  # if taking too long, assume door is OPEN
-                                    self.try_notify(self.subject, "Garage Door {} is taking a long time to close. Assuming it's still OPEN.".format(n) )
+                        if self._door_state[n] == "CLOSING" or self._door_state[n] == "OPENING":
+                            active_time = time.time()
+                            self.add_status("Detected door {} is {} at {}.".format(n, self._door_state[n], active_time) )
+                            # notify if "door active event" takes too long...
+                            while(self._door_state[n] == "CLOSING" or self._door_state[n] == "OPENING"):
+                                active_time = time.time()
+                                self.add_status("Detected door {} is still {} at {}.".format(n, self._door_state[n], active_time) )
+                                if active_time - self._event_time > 60:  # if closing or opening is taking too long, assume door is OPEN
+                                    self.try_notify(self.subject, "Garage Door {} is taking a long time to move. Assuming it's still OPEN.".format(n) )
                                     self._event_time = time.time()
-                                    self.set_nag_limit()  # reset nag timer limit
+                                    self.set_nag_limit(self.settings['ntfy_gdo'][2])  # reset nag timer limit
                                     self._door_state[n] = "OPEN"
                                 time.sleep(1)
-#
-# TODO FIXME : * notify once of door open if gcd is 'on', and nag time is zero
-#              * add a door is open "nag count", that is, stop nagging after "count" times.
-#
-# TODO : maybe add "I'm home" button/url, so you can indicate garage door open for long time is OK.
-#
+
                         if self._door_state[n] == "OPEN":
                             if self.settings['ntfy_gdo'][0] == 'on' and self.settings['ntfy_gdo'][1]:
                                 open_time = time.time()
@@ -334,7 +336,7 @@ class GarageControl(Thread):
 #              * add a door is closed "nag count", that is, stop nagging after "count" times.
 #
                         if self._door_state[n] == "CLOSED":
-                            self.set_nag_limit()  # reset nag timer limit
+                            self.set_nag_limit(self.settings['ntfy_gdo'][2])  # reset nag timer limit
                             if self.settings['ntfy_gdc'][0] == 'on' and self.settings['ntfy_gdc'][1]:
                                 close_time = time.time()
                                 if close_time - self._event_time > self.settings['ntfy_gdc'][1]:
@@ -349,7 +351,6 @@ class GarageControl(Thread):
                 exc_type, exc_value, exc_traceback = sys.exc_info()
                 err_string = ''.join(traceback.format_exception(exc_type, exc_value, exc_traceback))
                 self.add_status('Garage Control plugin encountered error:\n' + err_string)
-                #self._sleep(3600)
                 time.sleep(3600)
 
             #
@@ -373,7 +374,6 @@ class GarageControl(Thread):
                         urls.remove(v)
                 return
             # pause thread loop for 'n' seconds
-            #self._sleep(self.tp)
             time.sleep(self.tp)
 
 
@@ -609,8 +609,8 @@ def get_data():
         'ntfy_rain'  : 'off',
         'ntfy_run'   : 'off',
         'ntfy_gev'   : 'off',
-        'ntfy_gdo'   : [ 'on', 300 ],
-        'ntfy_gdc'   : [ 'off', 0 ],
+        'ntfy_gdo'   : [ 'on', 300, 6 ],
+        'ntfy_gdc'   : [ 'off', 0, 0 ],
         'twil_en'    : 'off',
         'twil_sid'   : '',
         'twil_atok'  : '',
