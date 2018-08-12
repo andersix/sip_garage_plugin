@@ -48,7 +48,8 @@ Before converting this code-base into a SIP plugin, it was stand-alone. The stan
 
 
 ### GPIO pins
-The following diagram shows the GPIO pins used by OpenSprinkler, and the default GPIO pins used by the Garage plugin. The pins highlighted in orange are used by OpenSprinkler, so obviously don't use them. Any other GPIOs are available. I picked the ones on the outside to make soldering pin connectors eaiser, and also because Ground connections are close by.
+The following diagram shows the GPIO pins used by OpenSprinkler, and the default GPIO pins used by the Garage plugin. The pins highlighted in orange are used by OpenSprinkler, so obviously don't use them, except for the power pins. Any other GPIOs are available. I picked the ones on the outside to make soldering pin connectors eaiser, and also because Ground connections are close by. I used the 3.3V for GPIO pullup, and a 5V pin to power the relay (the relay coil I selected requires 5V.) See relay and sensor wiring schematic for details.
 ![Garage GPIOs](https://raw.githubusercontent.com/andersix/sip_garage_plugin/master/doc/garage_gpios.png)
 
+### Schemtic and wiring
 

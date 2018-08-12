@@ -28,12 +28,15 @@ from sip import template_render  # Needed for working with web.py templates
 from webpages import ProtectedPage  # Needed for security
 import json  # for working with data file
 import time
+from datetime import datetime, timedelta
+import math
 from helpers import jsave
 from helpers import timestr
 from helpers import restart
 from gpio_pins import GPIO
 from random import randint
 from threading import Thread
+
 
 #
 # TODO FIXME : create a new email method to use Google apps API instead of smtplib
@@ -105,6 +108,7 @@ class GarageControl(Thread):
         self._event_time = 0  # events are buttons and door sensors
         self.settings = {}
         self.subject = "Garage"  # TODO add subject to settings file
+        self.notify_qtr = False
         self.tp = 10  # seconds to pause thread loop
         self.start()
 
@@ -123,6 +127,16 @@ class GarageControl(Thread):
         """
         self.nag_limit = limit
         gv.gc_nag = True
+
+    def quarter_time(self):
+        """
+        return time rounded to the next quarter of the hour
+        """
+        qt = datetime.today()
+        nsecs = qt.minute*60 + qt.second + qt.microsecond*1e-6
+        delta = (nsecs//900)*900+900-nsecs
+        return qt + timedelta(seconds = delta)
+
 
     # TODO FIXME : It would be nice to replace this status string with a logging mechanism,
     #              so we get it outta memory if in append, aka debug, mode.
@@ -300,6 +314,15 @@ class GarageControl(Thread):
         while True:
             try:
                 gv.gc_door_state = self._door_state
+
+                next_qtr = self.quarter_time()  # get next quarter time
+                # next quarter of the hour, _qh = (0: top; 1: first, or 15 after; 2: second, or 30 after; 3: third or 45 after)
+                _qh = int(math.floor(next_qtr.minute/15))
+                _ts = (next_qtr - datetime.today()).total_seconds()
+                if _ts < self.tp:
+                    if _qh in ntfy_qdq:
+                        self.notify_qtr = True
+
                 # Monitor door state and notify.
                 for n in s:
                     pin = s[n]['pin']  # sensor pin
@@ -319,6 +342,9 @@ class GarageControl(Thread):
                                 time.sleep(1)
 
                         if self._door_state[n] == "OPEN":
+                            if self.notify_qtr:  # Notify if door is open at a quarter of the hour, as enabled in config
+                                self.try_notify(self.subject, "Friendly reminder that garage door {} is still OPEN.".format(n))
+                                self.notify_qtr = False
                             if self.settings['ntfy_gdo'][0] == 'on' and self.settings['ntfy_gdo'][1]:
                                 open_time = time.time()
                                 if (open_time - self._event_time > self.settings['ntfy_gdo'][1]) and self.nag_limit > 0:
@@ -329,12 +355,7 @@ class GarageControl(Thread):
                                         self.try_notify(self.subject, "OK. I'll stop nagging, but Garage Door {} is still Open".format(n,self.nag_limit))
                                     if self.nag_limit > 0:
                                         self.nag_limit -= 1
-                            #elif self.settings['ntfy_gdo'][0] == 'on' and self.settings['ntfy_gdo'][1] == 0:
-                            #        self.try_notify(self.subject, "Garage Door %s is Open" % n)
-#
-# TODO FIXME : * notify once of door closed if gcd is 'on', and nag time is zero
-#              * add a door is closed "nag count", that is, stop nagging after "count" times.
-#
+
                         if self._door_state[n] == "CLOSED":
                             self.set_nag_limit(self.settings['ntfy_gdo'][2])  # reset nag timer limit
                             if self.settings['ntfy_gdc'][0] == 'on' and self.settings['ntfy_gdc'][1]:
@@ -342,8 +363,6 @@ class GarageControl(Thread):
                                 if close_time - self._event_time > self.settings['ntfy_gdc'][1]:
                                     self._event_time = close_time
                                     self.try_notify(self.subject, "Garage Door %s is still Closed" % n)
-                            #elif self.settings['ntfy_gdc'][0] == 'on' and self.settings['ntfy_gdc'][1] == 0:
-                            #        self.try_notify(self.subject, "Garage Door %s Closed" % n)
 #
 # TODO FIXME : * maybe add an option to close door after being open for a specified time
 #
@@ -357,6 +376,8 @@ class GarageControl(Thread):
             # TODO FIXME : not sure why this happens, but occationally, the plugin is re-loaded/re-started
             #              by the main SIP plugin code (I think) and so I added this code to keep track of
             #              the thread start time, so the old thread is killed. Hack? Bug? Help...
+            #
+            #              If you know WHY this is happening, please enlighten me via github comments or message. TIA.
             #
             if not t_start == gv.gc_start:  # Program restarted, so clean-up GPIO and stop thread
                 for n in s:
@@ -375,6 +396,8 @@ class GarageControl(Thread):
                 return
             # pause thread loop for 'n' seconds
             time.sleep(self.tp)
+
+
 
 
 
@@ -610,6 +633,7 @@ def get_data():
         'ntfy_run'   : 'off',
         'ntfy_gev'   : 'off',
         'ntfy_gdo'   : [ 'on', 300, 6 ],
+        'ntfy_gdq'   : [ 'on', 'off', 'off', 'off' ],
         'ntfy_gdc'   : [ 'off', 0, 0 ],
         'twil_en'    : 'off',
         'twil_sid'   : '',
