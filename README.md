@@ -22,7 +22,7 @@ $ patch -p1 < home.patch
 ## Hardware used
 To my Raspberry Pi and OpenSprinkler module setup, I added a two-relay module board, an overhead magnetic door sensor, and resistors for pullups and current limiting. See the diagrams section for how these parts are wired up and connected.
 ##### BOM
-* SainSmart 2-Channel Relay Module 
+* SainSmart 2-Channel Relay Module, 5V, 10A, Opto Isolated
   Link: http://a.co/61f2Ck4
 * 10k resistors (x3)
 * 1k resister (x1)
@@ -52,4 +52,4 @@ The following diagram shows the GPIO pins used by OpenSprinkler, and the default
 ![Garage GPIOs](https://raw.githubusercontent.com/andersix/sip_garage_plugin/master/doc/garage_gpios.png)
 
 ### Schemtic and wiring
-
+TBD

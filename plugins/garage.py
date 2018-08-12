@@ -320,7 +320,7 @@ class GarageControl(Thread):
                 _qh = int(math.floor(next_qtr.minute/15))
                 _ts = (next_qtr - datetime.today()).total_seconds()
                 if _ts < self.tp:
-                    if _qh in ntfy_qdq:
+                    if self.settings['ntfy_gdq'][_qh] == 'on':
                         self.notify_qtr = True
 
                 # Monitor door state and notify.
@@ -562,6 +562,23 @@ class save_settings(ProtectedPage):
             controller.settings['ntfy_gdo'][0] = qdict['ntfy_gdo[0]']
         controller.settings['ntfy_gdo'][1] = int(qdict['ntfy_gdo[1]'])
         
+        if 'ntfy_gdq[0]' not in qdict:
+            controller.settings['ntfy_gdq'][0] = 'off'
+        else:
+            controller.settings['ntfy_gdq'][0] = qdict['ntfy_gdq[0]']
+        if 'ntfy_gdq[1]' not in qdict:
+            controller.settings['ntfy_gdq'][1] = 'off'
+        else:
+            controller.settings['ntfy_gdq'][1] = qdict['ntfy_gdq[1]']
+        if 'ntfy_gdq[2]' not in qdict:
+            controller.settings['ntfy_gdq'][2] = 'off'
+        else:
+            controller.settings['ntfy_gdq'][2] = qdict['ntfy_gdq[2]']
+        if 'ntfy_gdq[3]' not in qdict:
+            controller.settings['ntfy_gdq'][3] = 'off'
+        else:
+            controller.settings['ntfy_gdq'][3] = qdict['ntfy_gdq[3]']
+
         if 'ntfy_gdc[0]' not in qdict:
             controller.settings['ntfy_gdc'][0] = 'off'
         else:
