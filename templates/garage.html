@@ -186,15 +186,6 @@ $var page: garage_plugin
                 </td>
             </tr>
             <tr>
-                <td style='text-transform: none;'>Notify if status is OPEN on X minutes after the hour:</td>
-                <td>
-                    0: <input name='ntfy_gdq[0]' type='checkbox'${" checked" if settings['ntfy_gdq'][0] == "on" else ""}> 
-                    15: <input name='ntfy_gdq[1]' type='checkbox'${" checked" if settings['ntfy_gdq'][1] == "on" else ""}> 
-                    30: <input name='ntfy_gdq[2]' type='checkbox'${" checked" if settings['ntfy_gdq'][2] == "on" else ""}> 
-                    45: <input name='ntfy_gdq[3]' type='checkbox'${" checked" if settings['ntfy_gdq'][3] == "on" else ""}> 
-                </td>
-            </tr>
-            <tr>
                 <td style='text-transform: none;'>OPEN nag timer:</td>
                 <td>
                     <input name='ntfy_gdo[1]' type='text' value=$settings['ntfy_gdo'][1]>
@@ -204,6 +195,15 @@ $var page: garage_plugin
                 <td style='text-transform: none;'>OPEN nag limit:</td>
                 <td>
                     <input name='ntfy_gdo[2]' type='text' value=$settings['ntfy_gdo'][2]>
+                </td>
+            </tr>
+            <tr>
+                <td style='text-transform: none;'>Notify if status is OPEN on X minutes after the hour:</td>
+                <td>
+                    0: <input name='ntfy_gdq[0]' type='checkbox'${" checked" if settings['ntfy_gdq'][0] == "on" else ""}> 
+                    15: <input name='ntfy_gdq[1]' type='checkbox'${" checked" if settings['ntfy_gdq'][1] == "on" else ""}> 
+                    30: <input name='ntfy_gdq[2]' type='checkbox'${" checked" if settings['ntfy_gdq'][2] == "on" else ""}> 
+                    45: <input name='ntfy_gdq[3]' type='checkbox'${" checked" if settings['ntfy_gdq'][3] == "on" else ""}> 
                 </td>
             </tr>
             <tr> <td>&nbsp;</td> </tr>

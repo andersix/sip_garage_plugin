@@ -561,6 +561,7 @@ class save_settings(ProtectedPage):
         else:
             controller.settings['ntfy_gdo'][0] = qdict['ntfy_gdo[0]']
         controller.settings['ntfy_gdo'][1] = int(qdict['ntfy_gdo[1]'])
+        controller.settings['ntfy_gdo'][2] = int(qdict['ntfy_gdo[2]'])
         
         if 'ntfy_gdq[0]' not in qdict:
             controller.settings['ntfy_gdq'][0] = 'off'
@@ -584,6 +585,7 @@ class save_settings(ProtectedPage):
         else:
             controller.settings['ntfy_gdc'][0] = qdict['ntfy_gdc[0]']
         controller.settings['ntfy_gdc'][1] = int(qdict['ntfy_gdc[1]'])
+        controller.settings['ntfy_gdc'][2] = int(qdict['ntfy_gdc[2]'])
         
         if 'twil_en' not in qdict:
             controller.settings['twil_en'] = 'off'
