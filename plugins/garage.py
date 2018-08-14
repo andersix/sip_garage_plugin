@@ -315,14 +315,6 @@ class GarageControl(Thread):
             try:
                 gv.gc_door_state = self._door_state
 
-                next_qtr = self.quarter_time()  # get next quarter time
-                # next quarter of the hour, _qh = (0: top; 1: first, or 15 after; 2: second, or 30 after; 3: third or 45 after)
-                _qh = int(math.floor(next_qtr.minute/15))
-                _ts = (next_qtr - datetime.today()).total_seconds()
-                if _ts < self.tp:
-                    if self.settings['ntfy_gdq'][_qh] == 'on':
-                        self.notify_qtr = True
-
                 # Monitor door state and notify.
                 for n in s:
                     pin = s[n]['pin']  # sensor pin
@@ -342,6 +334,18 @@ class GarageControl(Thread):
                                 time.sleep(1)
 
                         if self._door_state[n] == "OPEN":
+                            """ Once door is OPEN, notify every top and quarter of the hour the door remains open, if set to do so in config settings.
+                                Also notify every time the timer reaches the config settings nag time value, and until we've nagged the number
+                                of times, also specified in config settings. This nag can be set to zero in settings.
+                            """
+                            next_qtr = self.quarter_time()  # get next quarter time
+                            # next quarter of the hour, _qh = (0: top; 1: first, or 15 after; 2: second, or 30 after; 3: third or 45 after)
+                            _qh = int(math.floor(next_qtr.minute/15))
+                            _ts = (next_qtr - datetime.today()).total_seconds()
+                            self.notify_qtr = False
+                            if _ts < self.tp:
+                                if self.settings['ntfy_gdq'][_qh] == 'on':
+                                    self.notify_qtr = True
                             if self.notify_qtr:  # Notify if door is open at a quarter of the hour, as enabled in config
                                 self.try_notify(self.subject, "Friendly reminder that garage door {} is still OPEN.".format(n))
                                 self.notify_qtr = False
