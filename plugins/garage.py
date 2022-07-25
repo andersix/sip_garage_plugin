@@ -727,8 +727,7 @@ def send_email_insec(subject, text, attach=None):
         mail_pwd = settings['mail_pwd']   # User password
         mail_to = settings['mail_adr']
 
-        message = """From: %s\nTo: %s\nSubject: %s\n\n%s
-        """ % (mail_from, ", ".join(mail_to), subject, text)
+        message = f"""From: {mail_from}\nTo: {mail_to}\nSubject: {subject}\n{text}\n"""
 
         ssl_context = ssl.create_default_context()
         with smtplib.SMTP_SSL(smtp_server, smtp_port, context=ssl_context) as server:
