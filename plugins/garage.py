@@ -1,3 +1,4 @@
+#vim:expandtab:shiftwidth=4:tabstop=4:softtabstop=4:textwidth=100:
 #!/usr/bin/env python
 #
 # Control and monitor Garage doors using Raspberry Pi
@@ -17,6 +18,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
 
 import os
 import sys
@@ -43,20 +45,17 @@ from threading import Thread
 #              See how-to here: https://developers.google.com/gmail/api/quickstart/python
 #                               https://stackoverflow.com/questions/25944883/how-to-send-an-email-through-gmail-without-enabling-insecure-access
 #
-from email import Encoders
 import smtplib
-from email.MIMEMultipart import MIMEMultipart
-from email.MIMEBase import MIMEBase
-from email.MIMEText import MIMEText
+import ssl
 
 try:
     from twilio.rest import TwilioRestClient
     TWILIO_EN = True
 except:
-    print "From Garage Plugin:"
-    print "Twilio lib not installed. Twilio SMS send will not work"
-    print "Use pip to install the twilio python library, or"
-    print "download the twilio-python library from http://twilio.com/docs/libraries"
+    print(u"From Garage Plugin:")
+    print(u"Twilio lib not installed. Twilio SMS send will not work")
+    print(u"Use pip to install the twilio python library, or")
+    print(u"download the twilio-python library from http://twilio.com/docs/libraries")
     TWILIO_EN = False
 
 # TODO FIXME : add support for "pi" gpio_pins. Only supporting GPIO for now...
@@ -74,16 +73,16 @@ DATA_FILE = "./data/garage.json"
 #
 # Plugin menu entries ['Menu Name', 'URL'], (Optional)
 #
-gvmenu_settings = ['Garage Doors Settings', '/garage-s']
-gvmenu_button1  = ['Garage Button 1', '/garage-b1']
-gvmenu_button2  = ['Garage Button 2', '/garage-b2']
+gvmenu_settings = [u"Garage Doors Settings" , u"/garage-s" ]
+gvmenu_button1  = [u"Garage Button 1"       , u"/garage-b1"]
+gvmenu_button2  = [u"Garage Button 2"       , u"/garage-b2"]
 
 plugin_urls = [
-    '/garage-b1',   'plugins.garage.garage_button_1',
-    '/garage-b2',   'plugins.garage.garage_button_2',
-    '/garage-s',    'plugins.garage.settings',
-    '/garage-save', 'plugins.garage.save_settings',
-    '/garage-stn',  'plugins.garage.garage_stop_nagging'
+    u"/garage-b1",   u"plugins.garage.garage_button_1",
+    u"/garage-b2",   u"plugins.garage.garage_button_2",
+    u"/garage-s",    u"plugins.garage.settings",
+    u"/garage-save", u"plugins.garage.save_settings",
+    u"/garage-stn",  u"plugins.garage.garage_stop_nagging"
 ]
 
 ###############################################################################
@@ -140,7 +139,7 @@ class GarageControl(Thread):
 
     # TODO FIXME : It would be nice to replace this status string with a logging mechanism,
     #              so we get it outta memory if in append, aka debug, mode.
-    def add_status(self, msg, debug=False):
+    def add_status(self, msg, debug=True):
         _status = 'STATUS: ' + time.strftime("%d.%m.%Y at %H:%M:%S", time.localtime(time.time())) + ': ' + msg
         if self.status and debug:
             self.status += '\n' + _status
@@ -159,15 +158,16 @@ class GarageControl(Thread):
         a cell provider's SMS gateway.
         """
         #self.status = ''
-	mail_en = False if self.settings['mail_en'] == 'off' else True
-	twil_en = False if self.settings['twil_en'] == 'off' else True
+        mail_en = False if self.settings['mail_en'] == 'off' else True
+        twil_en = False if self.settings['twil_en'] == 'off' else True
         if when is None:
             when = time.localtime(time.time())
         _time = time.strftime("%d.%m.%Y at %H:%M:%S", when)
         text = text + "\nOn " + _time
         if mail_en:
             try:
-                send_email(subject, text, attachment)  # send email with attachment from
+                #send_email_insec(subject, text, attachment)  # send email with attachment from
+                send_email_insec(subject, text)  # send email with attachment from
                 self.add_status('Email sent: ' + text)
             except Exception as err:
                 self.add_status('Email not sent! ' + str(err))
@@ -219,15 +219,17 @@ class GarageControl(Thread):
         try:
             if self.gpio.input(pin) == 0:
                 self.set_nag_limit(self.settings['ntfy_gdc'][2])  # reset nag timer limit
-                return "CLOSED"
+                state = "CLOSED"
             # TODO : System Improvement:
             #        If the pin state is '1', we say it's OPEN, but it could be OPENING or CLOSING
             #        To improve, I could add a second sensor to indicate when the door is fully open.
             if self.gpio.input(pin) == 1:
                 self.set_nag_limit(self.settings['ntfy_gdo'][2])  # reset nag timer limit
-                return "OPEN"
-        except:
-            return "ERROR"
+                state = "OPEN"
+        except Exception as err:
+            print('Error: get_door_state: ' + str(err))
+            state = "ERROR"
+        return(state)
     
     def door_event(self,channel):
         """
@@ -236,6 +238,7 @@ class GarageControl(Thread):
         it changes the door status so we can act on it.
         """
         self._event_time = time.time()
+        time.sleep(0.250)
         _door_state = self.get_door_state(channel)
         self.add_status("Door sensor triggered on channel %0d" % channel)
         self.add_status("DEBUG: Door on channel %s is %s" % (channel, _door_state))
@@ -244,17 +247,21 @@ class GarageControl(Thread):
             pin = s[n]['pin']
             pud = s[n]['pud']
             if(channel == pin):
-                time.sleep(0.250)
+                #time.sleep(0.250)
+                time.sleep(1)
                 _door_state = self.get_door_state(channel)
                 if not (self._door_state[n] == _door_state):
                     self._door_state[n] = _door_state
                     #self._door_state[n] = self.get_door_state(channel)
                     self.add_status("Door %s is %s" % (n, self._door_state[n]))
-	            if self.settings['ntfy_gev'] == 'on':
+                    if self.settings['ntfy_gev'] == 'on':
                         self.try_notify(self.subject, "\nDoor %s %s" % (n, self._door_state[n]))
                 else:
                     self.add_status("DEBUG: Door status unchanged, Door %s is %s" % (n, self._door_state[n]))
                 break
+# TODO : Need to figure out a way to reload status when door closes, for home page buttons
+#        if _door_state == "CLOSED":
+#            raise web.seeother(u"/")  # return to home page
     
     def toggle_relay(self, pin, pol, hold_time):
         self.gpio.output(pin, self.gpio.HIGH ^ pol)
@@ -609,23 +616,27 @@ class save_settings(ProtectedPage):
         controller.settings['status'] = ""
         jsave(controller.settings, 'garage');
         controller.settings['status'] = controller.status
-        raise web.seeother('/restart')  # restart after settings change required
+        raise web.seeother(u"/restart")  # restart after settings change required
 
+
+class ospi_home_page(ProtectedPage):
+    def GET(self):
+        raise web.seeother(u"/")  # return to home page
 
 class garage_button_1(ProtectedPage):
     def GET(self):
         controller.press_button('1')
-        raise web.seeother('/')  # return to home page
+        raise web.seeother(u"/")  # return to home page
 
 class garage_button_2(ProtectedPage):
     def GET(self):
         controller.press_button('2')
-        raise web.seeother('/')  # return to home page
+        raise web.seeother(u"/")  # return to home page
 
 class garage_stop_nagging(ProtectedPage):
     def GET(self):
         controller.clear_nag_limit()
-        raise web.seeother('/')  # return to home page
+        raise web.seeother(u"/")  # return to home page
 
 
 
@@ -678,9 +689,12 @@ def get_data():
         with open(DATA_FILE, 'r') as fh:  # Read settings from json file if it exists
             try:
                 _data_items = json.load(fh)
-                for key, value in _data_items.iteritems():
+                #print(_data_items)
+                #for key, value in _data_items.iteritems():
+                for key in _data_items:
                     if key in settings:
-                        settings[key] = value
+                        settings[key] = _data_items[key]
+                        #print(key, settings[key])
             except ValueError as e:
                 print("Garage pluging couldn't parse data file:", e)
             finally:
@@ -694,7 +708,7 @@ def get_data():
     return settings
 
 
-def send_email(subject, text, attach=None):
+def send_email_insec(subject, text, attach=None):
     """
     Send email with with optional attachments
     If we have attachments, we send a MIME message,
@@ -704,38 +718,24 @@ def send_email(subject, text, attach=None):
           access to your gmail account by enabling it:
           https://support.google.com/accounts/answer/6010255?hl=en          
     """
+    smtp_server = "smtp.gmail.com" # TODO : add to settings config
+    smtp_port = 465 # TODO : add to settings config
     settings = controller.settings
     if settings['mail_usr'] != '' and settings['mail_pwd'] != '' and settings['mail_adr'] != '':
         mail_user = settings['mail_usr']  # User name
         mail_from = gv.sd['name']       # OSPi name
         mail_pwd = settings['mail_pwd']   # User password
         mail_to = settings['mail_adr']
-        #--------------
-        if attach is not None:
-            msg = MIMEMultipart()
-            msg['From'] = mail_from
-            msg['To'] = mail_to
-            msg['Subject'] = subject
-            msg.attach(MIMEText(text))
-            part = MIMEBase('application', 'octet-stream')
-            part.set_payload(open(attach, 'rb').read())
-            Encoders.encode_base64(part)
-            part.add_header('Content-Disposition', 'attachment; filename="%s"' % os.path.basename(attach))
-            msg.attach(part)
-            message = msg.as_string()
-        else:
-            message = """From: %s\nTo: %s\nSubject: %s\n\n%s
-            """ % (mail_from, ", ".join(mail_to), subject, text)
-        #----------
-        mailServer = smtplib.SMTP("smtp.gmail.com", 587)  # TODO FIXME : put server address and port into settings
-        mailServer.ehlo()
-        mailServer.starttls()
-        mailServer.ehlo()
-        mailServer.login(mail_user, mail_pwd)
-        mailServer.sendmail(mail_from, settings['mail_adr'], message)  # name + e-mail address in the From: field
-        mailServer.close()
+
+        message = """From: %s\nTo: %s\nSubject: %s\n\n%s
+        """ % (mail_from, ", ".join(mail_to), subject, text)
+
+        ssl_context = ssl.create_default_context()
+        with smtplib.SMTP_SSL(smtp_server, smtp_port, context=ssl_context) as server:
+            server.login(mail_user, mail_pwd)
+            server.sendmail(mail_user, mail_to, message)
     else:
-        raise Exception('E-mail settings not properly configured!')
+        raise Exception(u"E-mail settings not properly configured!")
 
 def send_sms(account_sid, auth_token, num_to, num_from, msg):
     if account_sid != '' and auth_token != '' and num_to != '' and num_from != '':
@@ -743,9 +743,9 @@ def send_sms(account_sid, auth_token, num_to, num_from, msg):
         try:
             client = TwilioRestClient(account_sid, auth_token)
             message = client.messages.create(to=num_to, from_=num_from, body=msg)
-            print message
+            print(message)
         except:
-            raise Exception('Twilio send failed')
+            raise Exception(u"Twilio send failed")
     else:
-        raise Exception('Twilio settings not properly configured!')
+        raise Exception(u"Twilio settings not properly configured!")
 
